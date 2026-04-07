@@ -129,7 +129,7 @@ func (writer *Writer) planPath(note notes.Note) (string, error) {
 	}
 
 	candidate := filepath.Join(targetDir, baseName+".md")
-	collisionSuffix := "-" + note.ShortID()
+	collisionSuffix := " " + note.ShortID()
 
 	writer.mu.Lock()
 	defer writer.mu.Unlock()

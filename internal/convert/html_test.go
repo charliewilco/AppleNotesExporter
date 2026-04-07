@@ -29,16 +29,56 @@ func TestHTMLToMarkdownConvertsTablesAndImages(t *testing.T) {
 		t.Fatalf("expected 1 asset, got %d", len(result.Assets))
 	}
 
-	if result.Assets[0].RelativePath != "assets/sample-001.png" {
+	if result.Assets[0].RelativePath != "assets/sample.png" {
 		t.Fatalf("unexpected asset path %q", result.Assets[0].RelativePath)
 	}
 
 	for _, snippet := range []string{
 		"# Heading",
 		"Hello **world**",
-		"![Screenshot](assets/sample-001.png)",
+		"![Screenshot](assets/sample.png)",
 		"| **Name** | **Value** |",
 		"| One | Two |",
+	} {
+		if !strings.Contains(result.Markdown, snippet) {
+			t.Fatalf("markdown missing snippet %q:\n%s", snippet, result.Markdown)
+		}
+	}
+}
+
+func TestHTMLToMarkdownKeepsNumberingForMultipleImages(t *testing.T) {
+	t.Parallel()
+
+	input := strings.Join([]string{
+		`<div><img src="data:image/png;base64,` + onePixelPNG + `" alt="First"></div>`,
+		`<div><img src="data:image/png;base64,` + onePixelPNG + `" alt="Second"></div>`,
+	}, "")
+
+	result, err := HTMLToMarkdown(input, Options{
+		AssetDir:    "assets",
+		AssetPrefix: "sample",
+	})
+	if err != nil {
+		t.Fatalf("HTMLToMarkdown returned error: %v", err)
+	}
+
+	if len(result.Assets) != 2 {
+		t.Fatalf("expected 2 assets, got %d", len(result.Assets))
+	}
+
+	expectedPaths := []string{
+		"assets/sample 001.png",
+		"assets/sample 002.png",
+	}
+	for index, expectedPath := range expectedPaths {
+		if result.Assets[index].RelativePath != expectedPath {
+			t.Fatalf("unexpected asset path %q at index %d", result.Assets[index].RelativePath, index)
+		}
+	}
+
+	for _, snippet := range []string{
+		"![First](assets/sample 001.png)",
+		"![Second](assets/sample 002.png)",
 	} {
 		if !strings.Contains(result.Markdown, snippet) {
 			t.Fatalf("markdown missing snippet %q:\n%s", snippet, result.Markdown)

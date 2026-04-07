@@ -66,10 +66,11 @@ func HTMLToMarkdown(input string, options Options) (Result, error) {
 
 	sections := renderer.renderContainer(body)
 	markdown := normalizeMarkdown(strings.Join(sections, "\n\n"))
+	markdown, assets := finalizeAssetPaths(markdown, renderer.assets, options)
 
 	return Result{
 		Markdown: markdown,
-		Assets:   renderer.assets,
+		Assets:   assets,
 	}, nil
 }
 
@@ -442,7 +443,7 @@ func (renderer *renderer) registerAsset(source string) (string, bool) {
 	}
 
 	extension := renderer.extensionForSource(source)
-	fileName := fmt.Sprintf("%s-%03d%s", prefix, renderer.imageIndex, extension)
+	fileName := fmt.Sprintf("%s %03d%s", prefix, renderer.imageIndex, extension)
 	relativePath := path.Join(assetDir, fileName)
 
 	renderer.assets = append(renderer.assets, Asset{
@@ -479,6 +480,38 @@ func (renderer *renderer) extensionForSource(source string) string {
 	}
 
 	return extension
+}
+
+func finalizeAssetPaths(markdown string, assets []Asset, options Options) (string, []Asset) {
+	if len(assets) != 1 {
+		return markdown, assets
+	}
+
+	assetDir := strings.TrimSpace(options.AssetDir)
+	if assetDir == "" {
+		assetDir = "assets"
+	}
+
+	prefix := strings.TrimSpace(options.AssetPrefix)
+	if prefix == "" {
+		prefix = "note"
+	}
+
+	extension := path.Ext(assets[0].RelativePath)
+	if extension == "" {
+		return markdown, assets
+	}
+
+	oldPath := assets[0].RelativePath
+	newPath := path.Join(assetDir, prefix+extension)
+	if oldPath == newPath {
+		return markdown, assets
+	}
+
+	assets = append([]Asset(nil), assets...)
+	assets[0].RelativePath = newPath
+
+	return strings.ReplaceAll(markdown, oldPath, newPath), assets
 }
 
 func (renderer *renderer) extractTextWithBreaks(node *html.Node) string {

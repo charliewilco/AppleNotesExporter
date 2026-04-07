@@ -47,7 +47,7 @@ func TestWriterPlanPathAddsShortIDOnCollision(t *testing.T) {
 		t.Fatalf("unexpected first path %q", firstPath)
 	}
 
-	expectedSecondSuffix := filepath.Join("iCloud", "Work", "Duplicate-"+second.ShortID()+".md")
+	expectedSecondSuffix := filepath.Join("iCloud", "Work", "Duplicate "+second.ShortID()+".md")
 	if !strings.HasSuffix(secondPath, expectedSecondSuffix) {
 		t.Fatalf("unexpected second path %q", secondPath)
 	}
@@ -96,14 +96,14 @@ func TestWriterExportWritesFrontmatterAndAssets(t *testing.T) {
 		`folder: "Work"`,
 		`account: "iCloud"`,
 		`Hello **team**`,
-		`![Preview](assets/Project Snapshot-001.png)`,
+		`![Preview](assets/Project Snapshot.png)`,
 	} {
 		if !strings.Contains(document, snippet) {
 			t.Fatalf("document missing snippet %q:\n%s", snippet, document)
 		}
 	}
 
-	assetPath := filepath.Join(filepath.Dir(result.NotePath), "assets", "Project Snapshot-001.png")
+	assetPath := filepath.Join(filepath.Dir(result.NotePath), "assets", "Project Snapshot.png")
 	if _, err := os.Stat(assetPath); err != nil {
 		t.Fatalf("expected asset file %q to exist: %v", assetPath, err)
 	}
